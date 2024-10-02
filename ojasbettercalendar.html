@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: auto;
+            gap: 5px;
+            width: 100vw;
+            height: 100vh;
+            padding: 10px;
+        }
+        .day {
+            border: 1px solid #000;
+            padding: 5px;
+            position: relative;
+        }
+        .day-number {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .event-input {
+            width: calc(100% - 20px);
+            margin-top: 25px;
+        }
+        .completed {
+            text-decoration: line-through;
+        }
+        .month-control {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        button {
+            margin: 5px;
+        }
+        #monthName {
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .day-of-week {
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+        }
+        .empty-day {
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="month-control">
+    <button id="prevMonth">Previous Month</button>
+    <span id="monthName"></span>
+    <button id="nextMonth">Next Month</button>
+</div>
+
+<div id="calendar" class="calendar"></div>
+
+<script>
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let currentMonth = new Date().getMonth(); // Automatically sets to the current month
+    let currentYear = new Date().getFullYear(); // Automatically sets to the current year
+
+    // Calculate the first day of the month to align correctly
+    function getFirstDayOfMonth(year, month) {
+        return new Date(year, month, 1).getDay();
+    }
+
+    function loadCalendar() {
+        document.getElementById('monthName').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+        const calendar = document.getElementById('calendar');
+        calendar.innerHTML = ''; // Clear previous calendar
+
+        // Add day of week headers
+        for (let i = 0; i < dayNames.length; i++) {
+            const dayOfWeek = document.createElement('div');
+            dayOfWeek.classList.add('day-of-week');
+            dayOfWeek.textContent = dayNames[i];
+            calendar.appendChild(dayOfWeek);
+        }
+
+        let days = daysInMonth[currentMonth];
+
+        // Check for leap year in February
+        if (currentMonth === 1) {
+            days = (currentYear % 4 === 0 && (currentYear % 100 !== 0 || currentYear % 400 === 0)) ? 29 : 28;
+        }
+
+        const firstDayIndex = getFirstDayOfMonth(currentYear, currentMonth);
+
+        // Add empty days for alignment
+        for (let i = 0; i < firstDayIndex; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.classList.add('empty-day');
+            calendar.appendChild(emptyDay);
+        }
+
+        for (let day = 1; day <= days; day++) {
+            const dayBox = document.createElement('div');
+            dayBox.classList.add('day');
+
+            // Day number in top-right
+            const dayNumber = document.createElement('span');
+            dayNumber.classList.add('day-number');
+            dayNumber.textContent = day;
+            dayBox.appendChild(dayNumber);
+
+            // Textbox for events
+            const input = document.createElement('textarea');
+            input.classList.add('event-input');
+            input.rows = 4;
+
+            // Retrieve saved data
+            const savedText = localStorage.getItem(`event-${currentYear}-${currentMonth}-${day}`) || '';
+            input.value = savedText;
+            dayBox.appendChild(input);
+
+            // Checkbox for strikethrough
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.addEventListener('change', function () {
+                if (checkbox.checked) {
+                    input.classList.add('completed');
+                } else {
+                    input.classList.remove('completed');
+                }
+                localStorage.setItem(`completed-${currentYear}-${currentMonth}-${day}`, checkbox.checked);
+            });
+            const isCompleted = localStorage.getItem(`completed-${currentYear}-${currentMonth}-${day}`) === 'true';
+            checkbox.checked = isCompleted;
+            if (isCompleted) input.classList.add('completed');
+
+            dayBox.appendChild(checkbox);
+
+            // Save data when typing
+            input.addEventListener('input', function () {
+                localStorage.setItem(`event-${currentYear}-${currentMonth}-${day}`, input.value);
+            });
+
+            calendar.appendChild(dayBox);
+        }
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', function () {
+        if (currentMonth === 0) {
+            currentMonth = 11;
+            currentYear--;
+        } else {
+            currentMonth--;
+        }
+        loadCalendar();
+    });
+
+    document.getElementById('nextMonth').addEventListener('click', function () {
+        if (currentMonth === 11) {
+            currentMonth = 0;
+            currentYear++;
+        } else {
+            currentMonth++;
+        }
+        loadCalendar();
+    });
+
+    loadCalendar(); // Initialize the calendar
+</script>
+
+</body>
+</html>
